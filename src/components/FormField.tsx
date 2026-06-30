@@ -25,8 +25,11 @@ export const FormInput: React.FC<FormInputProps> = ({
   style,
   placeholderTextColor = '#717182',
   error,
+  onFocus,
+  onBlur,
   ...rest
 }) => {
+  const [focused, setFocused] = useState(false);
   return (
     <View style={[{ gap: 7.986 }, containerStyle]}>
       <Text
@@ -39,7 +42,9 @@ export const FormInput: React.FC<FormInputProps> = ({
           backgroundColor: '#F3F3F5',
           borderRadius: 14,
           borderWidth: 1.162,
-          borderColor: error ? '#DC2626' : 'transparent',
+          // Highlight the field on focus so the user clearly sees they're
+          // typing inside it (the caret alone was barely visible).
+          borderColor: error ? '#DC2626' : focused ? '#E48714' : 'transparent',
           height: 47.989,
           paddingHorizontal: 12,
           justifyContent: 'center',
@@ -47,6 +52,16 @@ export const FormInput: React.FC<FormInputProps> = ({
         <TextInput
           className="font-poppins-regular"
           placeholderTextColor={placeholderTextColor}
+          cursorColor="#E48714"
+          selectionColor="#E48714"
+          onFocus={(e) => {
+            setFocused(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocused(false);
+            onBlur?.(e);
+          }}
           style={[
             {
               color: '#1E293B',

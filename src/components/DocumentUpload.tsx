@@ -204,8 +204,10 @@ export const useDocumentUpload = () => {
     setVisible(false);
     if (uploading) return;
     try {
+      // Restrict to PDFs so the file browser shows PDF documents (not images).
+      // Photos go through the Camera / Gallery options instead.
       const [file] = await pick({
-        type: [docTypes.pdf, docTypes.images],
+        type: [docTypes.pdf],
         allowMultiSelection: false,
       });
       if (!file?.uri) return;
