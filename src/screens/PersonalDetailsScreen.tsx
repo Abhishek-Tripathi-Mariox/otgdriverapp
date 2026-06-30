@@ -24,6 +24,7 @@ const PersonalDetailsScreen: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState(driver?.email ?? '');
   const [dob, setDob] = useState('');
   const [address, setAddress] = useState('');
+  const [pincode, setPincode] = useState('');
   const [license, setLicense] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ fullName?: string }>({});
@@ -60,6 +61,7 @@ const PersonalDetailsScreen: React.FC<Props> = ({ navigation }) => {
         email: email.trim() || undefined,
         dateOfBirth: dob || undefined,
         address: address || undefined,
+        pincode: pincode || undefined,
       });
       // Persist the saved driver (incl. address) so later steps — e.g. Owner
       // Details — can auto-fill from it.
@@ -131,6 +133,14 @@ const PersonalDetailsScreen: React.FC<Props> = ({ navigation }) => {
             value={address}
             onChangeText={setAddress}
             placeholder="Search your address"
+          />
+          <FormInput
+            label="Pincode"
+            value={pincode}
+            onChangeText={t => setPincode(t.replace(/[^0-9]/g, '').slice(0, 6))}
+            placeholder="6-digit pincode"
+            keyboardType="number-pad"
+            maxLength={6}
           />
           <DocumentUploadField
             label="Driving License"

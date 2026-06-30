@@ -288,6 +288,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation, route }) => {
   const [editVisible, setEditVisible] = useState(false);
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [editPincode, setEditPincode] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
   const docUpload = useDocumentUpload();
   const [licenseBusy, setLicenseBusy] = useState(false);
@@ -333,6 +334,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation, route }) => {
   const openEditProfile = () => {
     setEditName(driver?.name || '');
     setEditEmail(driver?.email || '');
+    setEditPincode(driver?.address?.pincode || '');
     setEditVisible(true);
   };
 
@@ -353,6 +355,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation, route }) => {
       const res = await driverApi.savePersonal({
         name: editName.trim(),
         email: email || undefined,
+        pincode: editPincode.trim() || undefined,
       });
       setDriver(driverSessionToProfile(res.data.data.driver));
       setEditVisible(false);
@@ -884,6 +887,34 @@ const ProfileScreen: React.FC<Props> = ({ navigation, route }) => {
                 placeholderTextColor="#9E9E9E"
                 keyboardType="email-address"
                 autoCapitalize="none"
+                className="font-poppins-regular"
+                style={{
+                  borderWidth: 1,
+                  borderColor: '#E0E0E0',
+                  borderRadius: 10,
+                  paddingHorizontal: 12,
+                  height: 46,
+                  color: '#404040',
+                  fontSize: 14,
+                }}
+              />
+            </View>
+
+            <View style={{ gap: 4 }}>
+              <Text
+                className="font-poppins-regular"
+                style={{ color: '#757575', fontSize: 12, lineHeight: 18 }}>
+                Pincode
+              </Text>
+              <TextInput
+                value={editPincode}
+                onChangeText={t =>
+                  setEditPincode(t.replace(/[^0-9]/g, '').slice(0, 6))
+                }
+                placeholder="6-digit pincode (to receive orders)"
+                placeholderTextColor="#9E9E9E"
+                keyboardType="number-pad"
+                maxLength={6}
                 className="font-poppins-regular"
                 style={{
                   borderWidth: 1,
