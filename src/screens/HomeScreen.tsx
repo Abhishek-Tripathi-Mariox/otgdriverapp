@@ -9,8 +9,9 @@ import StatCards from '../components/dashboard/StatCards';
 import EarningsSnapshotCard from '../components/dashboard/EarningsSnapshotCard';
 import QuickActionCard from '../components/dashboard/QuickActionCard';
 import NewDeliveryBanner from '../components/dashboard/NewDeliveryBanner';
+import NewOfferModal from '../components/dashboard/NewOfferModal';
 import OutForDeliveryCard from '../components/dashboard/OutForDeliveryCard';
-import { HelpIcon, ShareIcon } from '../components/DashboardIcons';
+import { HelpIcon, ShareIcon, WalletIcon } from '../components/DashboardIcons';
 import { useAuthStore } from '../store';
 import { driverApi, DriverDashboard } from '../api/client';
 import { extractErrorMessage } from '../api/errors';
@@ -48,6 +49,11 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const [dashboard, setDashboard] = useState<DriverDashboard | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [, setLoading] = useState(true);
+  // Tracks the offer id the driver dismissed via "Not Now" so the popup
+  // doesn't re-open on every 20s poll for the same offer.
+  const [dismissedOfferId, setDismissedOfferId] = useState<string | null>(null);
+  const [offerPopupVisible, setOfferPopupVisible] = useState(false);
+  const [acceptingOffer, setAcceptingOffer] = useState(false);
 
   const fetchDashboard = useCallback(async () => {
     try {
@@ -104,17 +110,35 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleAcceptDelivery = async () => {
     if (!dashboard?.newOffer) return;
+    setAcceptingOffer(true);
     try {
       await driverApi.orderStatus(dashboard.newOffer.id, 'accept');
       toast.success('Order accepted');
+      setOfferPopupVisible(false);
       await fetchDashboard();
     } catch (err: any) {
       toast.error(
         'Could not accept',
-        extractErrorMessage(err, 'Please try again.'),
+        extractErrorMessage(err, 'Please try again — another driver may have taken it.'),
       );
+      await fetchDashboard();
+    } finally {
+      setAcceptingOffer(false);
     }
   };
+
+  const handleDismissOfferPopup = () => {
+    if (dashboard?.newOffer) setDismissedOfferId(dashboard.newOffer.id);
+    setOfferPopupVisible(false);
+  };
+
+  // Pop the modal open whenever a new (not-yet-dismissed) offer shows up
+  // while the driver is online — this is what makes it a genuine pop-up
+  // rather than just the inline banner below.
+  useEffect(() => {
+    const offer = dashboard?.newOffer;
+    setOfferPopupVisible(!!(isOnline && offer && offer.id !== dismissedOfferId));
+  }, [dashboard?.newOffer, isOnline, dismissedOfferId]);
 
   const handleShareApp = async () => {
     const driverFirstName = driverDisplayName(driver?.name, driver?.mobile);
@@ -229,6 +253,12 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
 
           <View style={{ gap: 12, marginTop: -7.99 }}>
             <QuickActionCard
+              icon={<WalletIcon size={23.994} color="#FFFFFF" />}
+              iconBg="#4caf50"
+              title="Cash Collection (COD)"
+              onPress={() => navigation.navigate('CashCollection')}
+            />
+            <QuickActionCard
               icon={<HelpIcon size={23.994} color="#FFFFFF" />}
               iconBg="#E48714"
               title="Help & Support"
@@ -247,6 +277,14 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
       <SafeAreaView edges={['bottom']} style={{ backgroundColor: '#FFFFFF' }}>
         <BottomNavBar active={activeTab} onChange={handleNav} />
       </SafeAreaView>
+
+      <NewOfferModal
+        visible={offerPopupVisible}
+        offer={dashboard?.newOffer ?? null}
+        accepting={acceptingOffer}
+        onAccept={handleAcceptDelivery}
+        onDismiss={handleDismissOfferPopup}
+      />
     </View>
   );
 };

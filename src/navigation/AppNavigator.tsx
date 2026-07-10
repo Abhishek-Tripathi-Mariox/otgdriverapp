@@ -21,6 +21,7 @@ import BankDetailsScreen from '../screens/BankDetailsScreen';
 import UpdateBankDetailsScreen from '../screens/UpdateBankDetailsScreen';
 import EarningsScreen from '../screens/EarningsScreen';
 import PermissionsScreen from '../screens/PermissionsScreen';
+import CashCollectionScreen from '../screens/CashCollectionScreen';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -46,6 +47,7 @@ export type RootStackParamList = {
   UpdateBankDetails: undefined;
   Earnings: undefined;
   Permissions: { next?: keyof RootStackParamList } | undefined;
+  CashCollection: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -78,6 +80,7 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="UpdateBankDetails" component={UpdateBankDetailsScreen} />
         <Stack.Screen name="Earnings" component={EarningsScreen} />
         <Stack.Screen name="Permissions" component={PermissionsScreen} />
+        <Stack.Screen name="CashCollection" component={CashCollectionScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

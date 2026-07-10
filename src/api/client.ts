@@ -135,6 +135,36 @@ export type OrderSummary = {
   material?: string;
   quantity?: number;
   unit?: string;
+  // Present only on `dashboard().newOffer`: "dispatch" = already assigned to
+  // this driver and awaiting pickup; "early" = vendor just accepted the
+  // order and it's unclaimed — first matching driver (by pincode) to accept
+  // gets it.
+  stage?: 'dispatch' | 'early';
+  // COD cash collection — see CashCollectionScreen.
+  isCod?: boolean;
+  codAmount?: number;
+};
+
+export type CashDailyRow = {
+  date: string; // YYYY-MM-DD
+  collected: number;
+  deposited: number;
+  deliveries: number;
+};
+
+export type CashSummary = {
+  cashInHand: number;
+  totalCollected: number;
+  totalDeposited: number;
+  today: { collected: number; deposited: number };
+  daily: CashDailyRow[];
+};
+
+export type CashDeposit = {
+  _id: string;
+  amount: number;
+  note?: string;
+  createdAt: string;
 };
 
 export type DriverNotification = {
@@ -279,6 +309,21 @@ export const driverApi = {
     api.patch<{ success: boolean; data: { isOnline: boolean } }>(
       '/mobile/driver/online',
       { isOnline },
+    ),
+
+  // COD cash reconciliation
+  cashSummary: () =>
+    api.get<{ success: boolean; data: CashSummary }>(
+      '/mobile/driver/cash/summary',
+    ),
+  cashDeposits: () =>
+    api.get<{ success: boolean; data: CashDeposit[] }>(
+      '/mobile/driver/cash/deposits',
+    ),
+  createCashDeposit: (amount: number, note?: string) =>
+    api.post<{ success: boolean; data: CashDeposit }>(
+      '/mobile/driver/cash/deposits',
+      { amount, note },
     ),
 
   // Notifications
