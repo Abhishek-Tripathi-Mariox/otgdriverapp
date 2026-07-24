@@ -8,10 +8,11 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
+import { api } from '../api/client';
 
-// Free, no-API-key address search via OpenStreetMap Nominatim — the same
-// provider the customer app uses for geocoding. Google Places can replace this
-// later without touching the callers (they just receive an address string).
+// Address search proxied through our backend — uses Google Places if the
+// admin has configured it, else falls back to free OpenStreetMap Nominatim
+// (same shape either way, so this component never needs to change).
 type NominatimResult = {
   place_id: number;
   display_name: string;
@@ -54,21 +55,10 @@ const AddressSearchField: React.FC<Props> = ({
   const runSearch = async (q: string) => {
     setLoading(true);
     try {
-      const url =
-        'https://nominatim.openstreetmap.org/search?format=jsonv2' +
-        '&addressdetails=1&limit=6&countrycodes=in&q=' +
-        encodeURIComponent(q);
-      const res = await fetch(url, {
-        headers: {
-          'User-Agent': 'OTGDriverApp/1.0 (support@otg.app)',
-          'Accept-Language': 'en',
-        },
+      const res = await api.get<NominatimResult[]>('/geocode/search', {
+        params: { q },
       });
-      if (!res.ok) {
-        setResults([]);
-        return;
-      }
-      const data = (await res.json()) as NominatimResult[];
+      const data = res.data;
       setResults(Array.isArray(data) ? data : []);
       setOpen(true);
     } catch {
