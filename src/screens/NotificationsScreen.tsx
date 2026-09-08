@@ -85,16 +85,24 @@ const NotificationsScreen: React.FC<Props> = ({ navigation }) => {
   const unreadCount = items.filter(n => n.unread).length;
 
   const handleCardPress = async (item: DriverNotification) => {
-    if (!item.unread) return;
-    const snapshot = items;
-    setItems(prev =>
-      prev.map(n => (n._id === item._id ? { ...n, unread: false } : n)),
-    );
-    try {
-      await driverApi.markNotificationRead(item._id);
-      refreshUnread();
-    } catch {
-      setItems(snapshot);
+    if (item.unread) {
+      const snapshot = items;
+      setItems(prev =>
+        prev.map(n => (n._id === item._id ? { ...n, unread: false } : n)),
+      );
+      try {
+        await driverApi.markNotificationRead(item._id);
+        refreshUnread();
+      } catch {
+        setItems(snapshot);
+      }
+    }
+
+    if (item.booking) {
+      navigation.navigate('OrderDetails', {
+        orderId: item.booking,
+        variant: 'active',
+      });
     }
   };
 
@@ -246,6 +254,7 @@ const NotificationsScreen: React.FC<Props> = ({ navigation }) => {
                   isNew={item.unread}
                   iconBg={iconBg}
                   icon={icon}
+                  imageUri={item.image}
                   title={item.title}
                   message={item.message}
                   timeAgo={formatRelativeTime(item.createdAt)}

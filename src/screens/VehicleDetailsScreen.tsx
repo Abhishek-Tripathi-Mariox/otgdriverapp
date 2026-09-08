@@ -55,6 +55,11 @@ const VehicleDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
   const [liftingCapacity, setLiftingCapacity] = useState(
     editingVehicle?.liftingCapacity ?? '',
   );
+  const [liftingCapacityKg, setLiftingCapacityKg] = useState(
+    editingVehicle?.liftingCapacityKg != null
+      ? String(editingVehicle.liftingCapacityKg)
+      : '',
+  );
   const [regNo, setRegNo] = useState(editingVehicle?.registrationNo ?? '');
   const [insuranceNo, setInsuranceNo] = useState(
     editingVehicle?.insuranceNo ?? '',
@@ -79,6 +84,9 @@ const VehicleDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
   const [errors, setErrors] = useState<{
     vehicleType?: string;
     regNo?: string;
+    rcBook?: string;
+    insuranceDoc?: string;
+    pollution?: string;
   }>({});
 
   const validate = (): boolean => {
@@ -89,6 +97,16 @@ const VehicleDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
       next.regNo = 'Registration number is required';
     } else if (!INDIAN_REG_REGEX.test(normalized)) {
       next.regNo = 'Invalid format. Example: KA01AB1234';
+    }
+    // Documents are only mandatory for the first vehicle added during
+    // onboarding — matches the backend's own gate (driverOnboarding
+    // .controller.ts's addVehicle only enforces this while
+    // onboardingStep === "vehicle"), so a vehicle added later from "My
+    // Vehicles" isn't blocked here either.
+    if (!isEditing && driver?.onboardingStep === 'vehicle') {
+      if (!rcBook) next.rcBook = 'RC Book is required';
+      if (!insuranceDoc) next.insuranceDoc = 'Insurance document is required';
+      if (!pollution) next.pollution = 'Pollution certificate is required';
     }
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -126,6 +144,9 @@ const VehicleDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
         color,
         year,
         liftingCapacity,
+        liftingCapacityKg: liftingCapacityKg
+          ? Number(liftingCapacityKg)
+          : undefined,
         registrationNo: normalizeReg(regNo),
         insuranceNo,
         insuranceExpiry: insuranceExpiry || undefined,
@@ -242,6 +263,14 @@ const VehicleDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
           </View>
 
           <FormInput
+            label="Lifting Capacity in kg (for order matching)"
+            value={liftingCapacityKg}
+            onChangeText={t => setLiftingCapacityKg(t.replace(/[^0-9]/g, ''))}
+            placeholder="e.g., 1500"
+            keyboardType="number-pad"
+          />
+
+          <FormInput
             label="Registration No"
             value={regNo}
             onChangeText={text => {
@@ -288,22 +317,35 @@ const VehicleDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
           </Text>
 
           <DocumentUploadField
-            label="RC Book"
+            label={isEditing ? 'RC Book' : 'RC Book *'}
             value={rcBook}
             placeholder="Upload RC Book"
-            onChange={setRcBook}
+            onChange={text => {
+              setRcBook(text);
+              if (errors.rcBook) setErrors({ ...errors, rcBook: undefined });
+            }}
+            error={errors.rcBook}
           />
           <DocumentUploadField
-            label="Insurance"
+            label={isEditing ? 'Insurance' : 'Insurance *'}
             value={insuranceDoc}
             placeholder="Upload Insurance"
-            onChange={setInsuranceDoc}
+            onChange={text => {
+              setInsuranceDoc(text);
+              if (errors.insuranceDoc)
+                setErrors({ ...errors, insuranceDoc: undefined });
+            }}
+            error={errors.insuranceDoc}
           />
           <DocumentUploadField
-            label="Pollution Certificate"
+            label={isEditing ? 'Pollution Certificate' : 'Pollution Certificate *'}
             value={pollution}
             placeholder="Upload Pollution Certificate"
-            onChange={setPollution}
+            onChange={text => {
+              setPollution(text);
+              if (errors.pollution) setErrors({ ...errors, pollution: undefined });
+            }}
+            error={errors.pollution}
           />
 
           <PrimaryButton

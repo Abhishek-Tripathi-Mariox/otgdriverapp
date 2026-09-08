@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, Image } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 type Props = {
@@ -9,6 +9,7 @@ type Props = {
   message: string;
   timeAgo: string;
   isNew?: boolean;
+  imageUri?: string | null;
   onPress?: () => void;
   onDelete?: () => void;
 };
@@ -32,6 +33,7 @@ const NotificationCard: React.FC<Props> = ({
   message,
   timeAgo,
   isNew = false,
+  imageUri,
   onPress,
   onDelete,
 }) => (
@@ -52,17 +54,25 @@ const NotificationCard: React.FC<Props> = ({
       shadowRadius: 5,
       elevation: 2,
     }}>
-    <View
-      style={{
-        width: 47.989,
-        height: 47.989,
-        borderRadius: 23.994,
-        backgroundColor: iconBg,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-      {icon}
-    </View>
+    {imageUri ? (
+      <Image
+        source={{ uri: imageUri }}
+        style={{ width: 47.989, height: 47.989, borderRadius: 23.994 }}
+        resizeMode="cover"
+      />
+    ) : (
+      <View
+        style={{
+          width: 47.989,
+          height: 47.989,
+          borderRadius: 23.994,
+          backgroundColor: iconBg,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+        {icon}
+      </View>
+    )}
     <View style={{ flex: 1, gap: 3.993 }}>
       <View
         style={{

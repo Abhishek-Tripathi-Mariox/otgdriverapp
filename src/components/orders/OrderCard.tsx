@@ -9,11 +9,26 @@ export type OrderCardData = {
   drop: string;
   date: string;
   earnings: string;
+  isCod?: boolean;
+  codAmount?: number;
 };
 
 type Props = OrderCardData & { onPress?: () => void };
 
-const OrderCard: React.FC<Props> = ({ id, status, pickup, drop, date, earnings, onPress }) => {
+const formatRupees = (n: number) =>
+  Number.isFinite(n) ? `₹${Math.round(n).toLocaleString('en-IN')}` : '₹0';
+
+const OrderCard: React.FC<Props> = ({
+  id,
+  status,
+  pickup,
+  drop,
+  date,
+  earnings,
+  isCod,
+  codAmount,
+  onPress,
+}) => {
   const earningsColor =
     status === 'delivered' ? '#4CAF50' : status === 'rejected' ? '#F44336' : '#E48714';
   return (
@@ -38,6 +53,23 @@ const OrderCard: React.FC<Props> = ({ id, status, pickup, drop, date, earnings, 
         </Text>
         <OrderStatusChip status={status} />
       </View>
+
+      {isCod && (
+        <View
+          style={{
+            alignSelf: 'flex-start',
+            backgroundColor: '#FFF3E0',
+            borderRadius: 6,
+            paddingHorizontal: 8,
+            paddingVertical: 3,
+          }}>
+          <Text
+            className="font-poppins-semibold"
+            style={{ color: '#E48714', fontSize: 12, lineHeight: 18 }}>
+            COD · Collect {formatRupees(codAmount || 0)}
+          </Text>
+        </View>
+      )}
 
       <View style={{ gap: 7.99 }}>
         <View style={{ flexDirection: 'row', gap: 7.99 }}>

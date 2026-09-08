@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, ScrollView, RefreshControl, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import DashboardHeader from '../components/DashboardHeader';
@@ -39,6 +40,8 @@ const driverDisplayName = (name?: string, mobile?: string) => {
   return 'Driver';
 };
 
+const DISMISSED_OFFER_KEY = 'driver:dismissedOfferId';
+
 const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const driver = useAuthStore(s => s.driver);
   const toast = useToast();
@@ -54,6 +57,17 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const [dismissedOfferId, setDismissedOfferId] = useState<string | null>(null);
   const [offerPopupVisible, setOfferPopupVisible] = useState(false);
   const [acceptingOffer, setAcceptingOffer] = useState(false);
+
+  // Restore the dismissed-offer id so a "Not Now"'d offer's popup doesn't
+  // reappear just because the app was restarted — persisted, not just kept
+  // in memory for the component's lifetime.
+  useEffect(() => {
+    AsyncStorage.getItem(DISMISSED_OFFER_KEY)
+      .then(id => {
+        if (id) setDismissedOfferId(id);
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchDashboard = useCallback(async () => {
     try {
@@ -112,9 +126,16 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
     if (!dashboard?.newOffer) return;
     setAcceptingOffer(true);
     try {
-      await driverApi.orderStatus(dashboard.newOffer.id, 'accept');
+      const offerId = dashboard.newOffer.id;
+      await driverApi.orderStatus(offerId, 'accept');
       toast.success('Order accepted');
       setOfferPopupVisible(false);
+      // Accepting a "dispatched" offer doesn't change its status (it's
+      // already the terminal pre-delivery status), so the next dashboard
+      // refetch would otherwise keep classifying it as newOffer and pop the
+      // modal right back open — mark it dismissed the same way "Not Now" does.
+      setDismissedOfferId(offerId);
+      AsyncStorage.setItem(DISMISSED_OFFER_KEY, offerId).catch(() => {});
       await fetchDashboard();
     } catch (err: any) {
       toast.error(
@@ -128,7 +149,10 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const handleDismissOfferPopup = () => {
-    if (dashboard?.newOffer) setDismissedOfferId(dashboard.newOffer.id);
+    if (dashboard?.newOffer) {
+      setDismissedOfferId(dashboard.newOffer.id);
+      AsyncStorage.setItem(DISMISSED_OFFER_KEY, dashboard.newOffer.id).catch(() => {});
+    }
     setOfferPopupVisible(false);
   };
 

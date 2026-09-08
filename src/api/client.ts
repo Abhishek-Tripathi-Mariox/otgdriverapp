@@ -54,6 +54,7 @@ export type Vehicle = {
   color?: string;
   year?: string;
   liftingCapacity?: string;
+  liftingCapacityKg?: number;
   registrationNo?: string;
   insuranceNo?: string;
   insuranceExpiry?: string;
@@ -101,6 +102,7 @@ export type DriverSession = {
   vehicles?: Vehicle[];
   documents?: {
     drivingLicense?: DocFile;
+    securityPhoto?: DocFile;
   };
   owner?: {
     name?: string;
@@ -174,6 +176,8 @@ export type DriverNotification = {
   targetType: 'all' | 'drivers' | 'specific';
   createdAt: string;
   sentAt: string | null;
+  booking: string | null;
+  image: string | null;
   unread: boolean;
 };
 
@@ -259,6 +263,8 @@ export const driverApi = {
     api.post('/mobile/driver/documents/driving-license', { url }),
   reuploadDrivingLicense: (url: string) =>
     api.post('/mobile/driver/documents/driving-license/reupload', { url }),
+  saveSecurityPhoto: (url: string) =>
+    api.post('/mobile/driver/documents/security-photo', { url }),
 
   // Vehicle-owned document re-upload (RC / insurance / pollution)
   reuploadVehicleDocument: (vehicleId: string, docType: string, url: string) =>
@@ -300,10 +306,11 @@ export const driverApi = {
   orderStatus: (
     bookingId: string,
     action: 'accept' | 'start' | 'complete' | 'reject',
+    extra?: { podPhotoUrl?: string },
   ) =>
     api.patch<{ success: boolean; data: OrderSummary }>(
       `/mobile/driver/orders/${bookingId}/status`,
-      { action },
+      { action, ...extra },
     ),
   setOnline: (isOnline: boolean) =>
     api.patch<{ success: boolean; data: { isOnline: boolean } }>(

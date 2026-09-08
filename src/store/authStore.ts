@@ -25,6 +25,7 @@ export type DriverVehicle = {
   color?: string;
   year?: string;
   liftingCapacity?: string;
+  liftingCapacityKg?: number;
   registrationNo?: string;
   insuranceNo?: string;
   insuranceExpiry?: string;
@@ -71,6 +72,7 @@ export type DriverProfile = {
   vehicles?: DriverVehicle[];
   documents?: {
     drivingLicense?: DriverDocument;
+    securityPhoto?: DriverDocument;
   };
   owner?: {
     name?: string;

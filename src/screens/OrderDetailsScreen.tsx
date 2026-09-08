@@ -256,6 +256,28 @@ const OrderDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
                 {earningsLabel}
               </Text>
             </View>
+            {order?.isCod && (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingTop: 9,
+                  borderTopWidth: 1,
+                  borderTopColor: '#EEEEEE',
+                }}>
+                <Text
+                  className="font-poppins-semibold"
+                  style={{ color: '#E48714', fontSize: 14, lineHeight: 22.4 }}>
+                  Cash to Collect (COD)
+                </Text>
+                <Text
+                  className="font-poppins-bold"
+                  style={{ color: '#E48714', fontSize: 18, lineHeight: 28 }}>
+                  ₹{(order?.codAmount ?? 0).toLocaleString('en-IN')}
+                </Text>
+              </View>
+            )}
           </View>
 
           {isRejected && (

@@ -25,13 +25,22 @@ const PersonalDetailsScreen: React.FC<Props> = ({ navigation }) => {
   const [dob, setDob] = useState('');
   const [address, setAddress] = useState('');
   const [pincode, setPincode] = useState('');
-  const [license, setLicense] = useState('');
+  const [license, setLicense] = useState(driver?.documents?.drivingLicense?.url ?? '');
+  const [securityPhoto, setSecurityPhoto] = useState(
+    driver?.documents?.securityPhoto?.url ?? '',
+  );
   const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors] = useState<{ fullName?: string }>({});
+  const [errors, setErrors] = useState<{
+    fullName?: string;
+    license?: string;
+    securityPhoto?: string;
+  }>({});
 
   const validate = (): boolean => {
     const next: typeof errors = {};
     if (!fullName.trim()) next.fullName = 'Full name is required';
+    if (!license) next.license = 'Driving license is required';
+    if (!securityPhoto) next.securityPhoto = 'Your photo is required for security verification';
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -51,11 +60,10 @@ const PersonalDetailsScreen: React.FC<Props> = ({ navigation }) => {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      // Driving license is a per-driver document; save it alongside personal info
-      // when the driver provides one.
-      if (license) {
-        await driverApi.saveDrivingLicense(license);
-      }
+      // Driving license + security photo are per-driver documents; save them
+      // alongside personal info before advancing the onboarding step.
+      await driverApi.saveDrivingLicense(license);
+      await driverApi.saveSecurityPhoto(securityPhoto);
       const res = await driverApi.savePersonal({
         name: fullName.trim(),
         email: email.trim() || undefined,
@@ -143,10 +151,25 @@ const PersonalDetailsScreen: React.FC<Props> = ({ navigation }) => {
             maxLength={6}
           />
           <DocumentUploadField
-            label="Driving License"
+            label="Driving License *"
             value={license}
             placeholder="Upload Driving License"
-            onChange={setLicense}
+            onChange={text => {
+              setLicense(text);
+              if (errors.license) setErrors({ ...errors, license: undefined });
+            }}
+            error={errors.license}
+          />
+          <DocumentUploadField
+            label="Your Photo (Security Verification) *"
+            value={securityPhoto}
+            placeholder="Take a selfie"
+            onChange={text => {
+              setSecurityPhoto(text);
+              if (errors.securityPhoto)
+                setErrors({ ...errors, securityPhoto: undefined });
+            }}
+            error={errors.securityPhoto}
           />
 
           <PrimaryButton

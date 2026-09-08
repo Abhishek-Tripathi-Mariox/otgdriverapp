@@ -6,6 +6,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   Pressable,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -18,6 +19,7 @@ import { ClipboardIcon } from '../components/DashboardIcons';
 import { driverApi, OrderSummary } from '../api/client';
 import { extractErrorMessage } from '../api/errors';
 import { useToast } from '../components/Toast';
+import { useDocumentUpload } from '../components/DocumentUpload';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MyOrders'>;
@@ -62,6 +64,8 @@ const toCardData = (order: OrderSummary): OrderCardData => ({
   drop: order.drop,
   date: formatOrderDate(order.date),
   earnings: formatRupees(order.earnings),
+  isCod: order.isCod,
+  codAmount: order.codAmount,
 });
 
 const EmptyState: React.FC<{ tab: OrdersTab }> = ({ tab }) => {
@@ -141,6 +145,7 @@ const MyOrdersScreen: React.FC<Props> = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [actingId, setActingId] = useState<string | null>(null);
   const toast = useToast();
+  const podUpload = useDocumentUpload();
 
   const fetchOrders = useCallback(
     async (which: OrdersTab) => {
@@ -188,21 +193,58 @@ const MyOrdersScreen: React.FC<Props> = ({ navigation }) => {
     });
   };
 
+  // "Mark Delivered" requires a proof-of-delivery photo first (backend
+  // rejects `complete` without one) — and for a COD order, an explicit
+  // acknowledgement of the cash amount to collect before that photo step.
+  const finalizeComplete = async (order: OrderSummary, podPhotoUrl: string) => {
+    setActingId(order.id);
+    try {
+      await driverApi.orderStatus(order.id, 'complete', { podPhotoUrl });
+      toast.success('Order marked delivered');
+      await fetchOrders(tab);
+    } catch (err: any) {
+      toast.error(
+        'Action failed',
+        extractErrorMessage(err, 'Please try again.'),
+      );
+    } finally {
+      setActingId(null);
+    }
+  };
+
+  const captureProofAndComplete = (order: OrderSummary) => {
+    podUpload.start(({ url }) => finalizeComplete(order, url));
+  };
+
+  const handleCompleteAction = (order: OrderSummary) => {
+    if (order.isCod && order.codAmount) {
+      const amount = `₹${Math.round(order.codAmount).toLocaleString('en-IN')}`;
+      Alert.alert(
+        'Confirm Cash Collection',
+        `Collect ${amount} in cash from the customer, then take a photo of the delivered goods to complete this order.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Continue', onPress: () => captureProofAndComplete(order) },
+        ],
+      );
+    } else {
+      captureProofAndComplete(order);
+    }
+  };
+
   const handleAction = async (
     order: OrderSummary,
     action: 'start' | 'complete' | 'reject',
   ) => {
     if (actingId) return;
+    if (action === 'complete') {
+      handleCompleteAction(order);
+      return;
+    }
     setActingId(order.id);
     try {
       await driverApi.orderStatus(order.id, action);
-      toast.success(
-        action === 'start'
-          ? 'Pickup started'
-          : action === 'complete'
-          ? 'Order marked delivered'
-          : 'Order rejected',
-      );
+      toast.success(action === 'start' ? 'Pickup started' : 'Order rejected');
       await fetchOrders(tab);
     } catch (err: any) {
       toast.error(
@@ -315,6 +357,7 @@ const MyOrdersScreen: React.FC<Props> = ({ navigation }) => {
       <SafeAreaView edges={['bottom']} style={{ backgroundColor: '#FFFFFF' }}>
         <BottomNavBar active={navTab} onChange={handleNav} />
       </SafeAreaView>
+      {podUpload.sheet}
     </View>
   );
 };
