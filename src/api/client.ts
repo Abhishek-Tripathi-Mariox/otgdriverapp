@@ -234,6 +234,8 @@ export const driverApi = {
     api.get<{ success: boolean; data: DriverSession }>(
       '/mobile/driver/auth/me',
     ),
+  updateFcmToken: (fcmToken: string) =>
+    api.put('/mobile/driver/fcm-token', { fcmToken }),
 
   // Vehicles
   addVehicle: (data: VehiclePayload) => api.post('/mobile/driver/vehicles', data),

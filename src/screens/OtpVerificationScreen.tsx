@@ -21,6 +21,7 @@ import { driverApi } from '../api/client';
 import { extractErrorMessage } from '../api/errors';
 import { useToast } from '../components/Toast';
 import { hasRequestedPermissions } from '../utils/permissions';
+import { registerPushToken } from '../services/pushNotifications';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OtpVerification'>;
@@ -73,6 +74,7 @@ const OtpVerificationScreen: React.FC<Props> = ({ navigation, route }) => {
         token,
         driver: driverSessionToProfile(serverDriver),
       });
+      registerPushToken(); // fire-and-forget — never blocks navigation
       const next = screenForStep(
         serverDriver.onboardingStep,
         serverDriver.approvalStatus,

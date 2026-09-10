@@ -10,6 +10,7 @@ import {
   driverSessionToProfile,
 } from '../store';
 import { driverApi } from '../api/client';
+import { registerPushToken } from '../services/pushNotifications';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
@@ -33,6 +34,7 @@ const SplashScreen: React.FC<Props> = ({ navigation }) => {
         const res = await driverApi.me();
         const d = res.data.data;
         setDriver(driverSessionToProfile(d));
+        registerPushToken(); // fire-and-forget — never blocks navigation
         const next = screenForStep(d.onboardingStep, d.approvalStatus);
         navigation.reset({
           index: 0,
