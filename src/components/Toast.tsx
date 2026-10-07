@@ -34,6 +34,18 @@ type ToastContextValue = {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
+// Lets non-component code (pushNotifications.ts's foreground onMessage
+// handler) show a toast without needing a screen's own hook access — same
+// external-trigger pattern as the customer app's showAppAlert.
+let externalShow: ToastContextValue['show'] | null = null;
+export const showAppToast = (
+  variant: ToastVariant,
+  title: string,
+  message?: string,
+): void => {
+  externalShow?.(variant, title, message);
+};
+
 export const useToast = (): ToastContextValue => {
   const ctx = useContext(ToastContext);
   if (!ctx) {
@@ -253,6 +265,13 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
     success: (title, message) => show('success', title, message),
     info: (title, message) => show('info', title, message),
   };
+
+  useEffect(() => {
+    externalShow = show;
+    return () => {
+      if (externalShow === show) externalShow = null;
+    };
+  }, [show]);
 
   return (
     <ToastContext.Provider value={value}>

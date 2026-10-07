@@ -91,7 +91,12 @@ type DonePayload = { url: string; name: string };
 // Picks a document from camera, gallery, or the file manager, uploads it to S3
 // via the backend, and hands back the resulting URL. Render `sheet` somewhere in
 // the tree and call `start(onDone)` to open the source chooser.
-export const useDocumentUpload = () => {
+//
+// `cameraOnly` skips the source-chooser sheet entirely and launches the
+// camera directly — used for proof-of-delivery capture (D18-19), which must
+// be a real-time photo, never a gallery pick or file upload.
+export const useDocumentUpload = (opts?: {cameraOnly?: boolean}) => {
+  const cameraOnly = !!opts?.cameraOnly;
   const toast = useToast();
   const [uploading, setUploading] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -100,7 +105,11 @@ export const useDocumentUpload = () => {
   const start = (onDone: (payload: DonePayload) => void) => {
     if (uploading) return;
     onDoneRef.current = onDone;
-    setVisible(true);
+    if (cameraOnly) {
+      handleCamera();
+    } else {
+      setVisible(true);
+    }
   };
 
   const upload = async (dataUri: string, name: string) => {

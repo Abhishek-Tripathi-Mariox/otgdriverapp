@@ -145,7 +145,9 @@ const MyOrdersScreen: React.FC<Props> = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [actingId, setActingId] = useState<string | null>(null);
   const toast = useToast();
-  const podUpload = useDocumentUpload();
+  // Proof-of-delivery must be a real-time camera capture — no gallery or
+  // file picker (D18-19).
+  const podUpload = useDocumentUpload({cameraOnly: true});
 
   const fetchOrders = useCallback(
     async (which: OrdersTab) => {
